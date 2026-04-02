@@ -1,0 +1,30 @@
+{
+  "name": "job-radar",
+  "version": "0.1.0",
+  "private": true,
+  "description": "JobRadar - 职位情报分析平台",
+  "scripts": {
+    "dev:server": "pnpm --filter @job-radar/server dev",
+    "dev:web": "pnpm --filter @job-radar/web dev",
+    "dev": "pnpm run --parallel dev:server dev:web",
+    "build:shared": "pnpm --filter @job-radar/shared build",
+    "build:server": "pnpm --filter @job-radar/server build",
+    "build:web": "pnpm --filter @job-radar/web build",
+    "build": "pnpm build:shared && pnpm run --parallel build:server build:web",
+    "seed": "pnpm --filter @job-radar/server seed",
+    "set-admin": "ts-node -P apps/server/tsconfig.json scripts/set-admin.ts",
+    "lint": "pnpm -r lint"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "volta": {
+    "node": "20.20.0"
+  },
+  "devDependencies": {
+    "@oxc-minify/binding-win32-x64-msvc": "^0.123.0",
+    "@oxc-parser/binding-win32-x64-msvc": "^0.123.0",
+    "@oxc-transform/binding-win32-x64-msvc": "^0.123.0"
+  }
+}

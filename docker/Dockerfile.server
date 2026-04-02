@@ -1,0 +1,19 @@
+FROM node:20-alpine AS base
+RUN corepack enable && corepack prepare pnpm@8.15.9 --activate
+WORKDIR /app
+
+# 安装依赖
+COPY pnpm-workspace.yaml pnpm-lock.yaml* package.json ./
+COPY packages/shared/package.json ./packages/shared/
+COPY apps/server/package.json ./apps/server/
+RUN pnpm install --frozen-lockfile --ignore-scripts
+
+# 复制源码
+COPY packages/shared ./packages/shared
+COPY apps/server ./apps/server
+
+# 构建
+RUN pnpm --filter @job-radar/server build
+
+EXPOSE 3001
+CMD ["node", "apps/server/dist/main"]

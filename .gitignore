@@ -1,0 +1,15 @@
+node_modules
+dist
+.output
+.nuxt
+.env
+*.local
+.DS_Store
+Thumbs.db
+coverage
+.turbo
+*.csv
+__pycache__
+*.pyc
+*.pyo
+.claude/

@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: jobRadar-postgres
+    environment:
+      POSTGRES_USER: jobRadar
+      POSTGRES_PASSWORD: jobRadar123
+      POSTGRES_DB: jobRadar
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U jobRadar']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: jobRadar-redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.server
+    container_name: jobRadar-server
+    ports:
+      - '3001:3001'
+    env_file:
+      - ../.env
+    environment:
+      DATABASE_HOST: postgres
+      REDIS_HOST: redis
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.web
+    container_name: jobRadar-web
+    ports:
+      - '3000:3000'
+    env_file:
+      - ../.env
+    environment:
+      NUXT_PUBLIC_API_BASE: http://server:3001/api
+    depends_on:
+      - server
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:

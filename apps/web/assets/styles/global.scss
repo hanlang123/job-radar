@@ -1,0 +1,486 @@
+/* ========================================
+   JobRadar - AI 科技风格全局样式
+   ======================================== */
+
+/* Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* 主题色 */
+  --primary-color: #00e0ff;
+  --primary-light: rgba(0, 224, 255, 0.1);
+  --primary-glow: rgba(0, 224, 255, 0.3);
+  --accent-purple: #7b61ff;
+  --accent-purple-light: rgba(123, 97, 255, 0.1);
+  --accent-green: #00ffaa;
+  --accent-green-light: rgba(0, 255, 170, 0.1);
+  --success-color: #00ffaa;
+  --warning-color: #ffaa00;
+  --danger-color: #ff3366;
+  --info-color: #7b61ff;
+
+  /* 背景色 */
+  --bg-color: #0a0e1a;
+  --bg-secondary: #111827;
+  --bg-card: rgba(255, 255, 255, 0.04);
+  --bg-card-hover: rgba(255, 255, 255, 0.08);
+  --bg-white: rgba(255, 255, 255, 0.05);
+
+  /* 文字颜色 */
+  --text-primary: rgba(255, 255, 255, 0.95);
+  --text-regular: rgba(255, 255, 255, 0.75);
+  --text-secondary: rgba(255, 255, 255, 0.45);
+  --text-placeholder: rgba(255, 255, 255, 0.25);
+
+  /* 边框 */
+  --border-color: rgba(255, 255, 255, 0.1);
+  --border-light: rgba(255, 255, 255, 0.06);
+  --border-glow: rgba(0, 224, 255, 0.3);
+
+  /* 阴影 */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 24px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 48px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 20px rgba(0, 224, 255, 0.15);
+  --shadow-glow-purple: 0 0 20px rgba(123, 97, 255, 0.15);
+
+  /* 圆角 */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+
+  /* 毛玻璃 */
+  --glass-bg: rgba(255, 255, 255, 0.04);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-blur: 20px;
+
+  /* 字体 */
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-sans: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body,
+#__nuxt {
+  height: 100%;
+  font-family: var(--font-sans);
+  color: var(--text-primary);
+  background-color: var(--bg-color);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 全局背景网格 */
+body {
+  background-image:
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0, 224, 255, 0.06) 0%, transparent 60%),
+    linear-gradient(180deg, var(--bg-color) 0%, var(--bg-secondary) 100%);
+  background-attachment: fixed;
+}
+
+a {
+  color: var(--primary-color);
+  text-decoration: none;
+  transition: color 0.2s;
+
+  &:hover {
+    color: #33e8ff;
+  }
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+}
+
+/* 页面过渡动画 */
+.page-enter-active,
+.page-leave-active {
+  transition: all 0.3s ease;
+}
+
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+.page-leave-to {
+  opacity: 0;
+}
+
+/* 毛玻璃卡片 */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: var(--bg-card-hover);
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: var(--shadow-glow);
+  }
+}
+
+/* 统计卡片通用样式 */
+.stat-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  border-radius: var(--radius-md);
+  padding: 20px 24px;
+  border: 1px solid var(--glass-border);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--primary-color), var(--accent-purple), var(--accent-green));
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  &:hover {
+    border-color: var(--border-glow);
+    box-shadow: var(--shadow-glow);
+
+    &::before {
+      opacity: 1;
+    }
+  }
+
+  .stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    color: var(--text-primary);
+    line-height: 1.2;
+  }
+
+  .stat-label {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 6px;
+    letter-spacing: 0.5px;
+  }
+}
+
+/* 区域标题 */
+.section-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: 0.3px;
+}
+
+/* 薪资颜色 */
+.salary-text {
+  color: var(--accent-green);
+  font-weight: 600;
+  font-family: var(--font-mono);
+}
+
+/* 技能标签 */
+.skill-tag {
+  display: inline-block;
+  padding: 3px 10px;
+  font-size: 12px;
+  border-radius: 20px;
+  background: var(--primary-light);
+  color: var(--primary-color);
+  border: 1px solid rgba(0, 224, 255, 0.2);
+  margin: 2px 4px 2px 0;
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba(0, 224, 255, 0.2);
+    box-shadow: 0 0 8px rgba(0, 224, 255, 0.2);
+  }
+}
+
+/* 渐变文字工具 */
+.gradient-text {
+  background: linear-gradient(135deg, var(--primary-color), var(--accent-purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-green {
+  background: linear-gradient(135deg, var(--accent-green), var(--primary-color));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* 霓虹边框动画 */
+@keyframes neon-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+@keyframes glow-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+/* 渐入动画 */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-in {
+  animation: fadeInUp 0.5s ease forwards;
+}
+
+/* 响应式工具 */
+@media (max-width: 768px) {
+  .hide-on-mobile {
+    display: none !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .show-on-mobile-only {
+    display: none !important;
+  }
+}
+
+/* ========================================
+   Element Plus 暗色主题覆写
+   ======================================== */
+
+/* 按钮 */
+.el-button--primary {
+  --el-button-bg-color: var(--primary-color) !important;
+  --el-button-border-color: var(--primary-color) !important;
+  --el-button-hover-bg-color: #33e8ff !important;
+  --el-button-hover-border-color: #33e8ff !important;
+  --el-button-text-color: #0a0e1a !important;
+  font-weight: 600;
+}
+
+.el-button--default,
+.el-button.is-text {
+  --el-button-bg-color: transparent !important;
+  --el-button-border-color: var(--border-color) !important;
+  --el-button-text-color: var(--text-regular) !important;
+  --el-button-hover-bg-color: rgba(255, 255, 255, 0.06) !important;
+  --el-button-hover-border-color: var(--primary-color) !important;
+  --el-button-hover-text-color: var(--primary-color) !important;
+}
+
+/* 输入框 */
+.el-input__wrapper,
+.el-textarea__inner {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  border-color: var(--border-color) !important;
+  box-shadow: none !important;
+  color: var(--text-primary) !important;
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.2) !important;
+  }
+
+  &.is-focus,
+  &:focus {
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 1px rgba(0, 224, 255, 0.2) !important;
+  }
+}
+
+.el-input__inner {
+  color: var(--text-primary) !important;
+
+  &::placeholder {
+    color: var(--text-placeholder) !important;
+  }
+}
+
+.el-textarea__inner {
+  color: var(--text-primary) !important;
+
+  &::placeholder {
+    color: var(--text-placeholder) !important;
+  }
+}
+
+/* Select */
+.el-select {
+  --el-select-input-focus-border-color: var(--primary-color) !important;
+}
+
+.el-select__wrapper {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  border-color: var(--border-color) !important;
+  box-shadow: none !important;
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.2) !important;
+  }
+
+  &.is-focused {
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 1px rgba(0, 224, 255, 0.2) !important;
+  }
+}
+
+.el-select__selected-item,
+.el-select__placeholder {
+  color: var(--text-regular) !important;
+}
+
+.el-select-dropdown {
+  background: var(--bg-secondary) !important;
+  border-color: var(--border-color) !important;
+
+  .el-select-dropdown__item {
+    color: var(--text-regular) !important;
+
+    &:hover,
+    &.hover {
+      background: rgba(0, 224, 255, 0.1) !important;
+    }
+
+    &.is-selected {
+      color: var(--primary-color) !important;
+      font-weight: 600;
+    }
+  }
+}
+
+/* Popper / Dropdown */
+.el-popper {
+  background: var(--bg-secondary) !important;
+  border-color: var(--border-color) !important;
+
+  .el-popper__arrow::before {
+    background: var(--bg-secondary) !important;
+    border-color: var(--border-color) !important;
+  }
+}
+
+/* Card */
+.el-card {
+  --el-card-bg-color: var(--glass-bg) !important;
+  --el-card-border-color: var(--glass-border) !important;
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  color: var(--text-primary);
+}
+
+/* Tag */
+.el-tag {
+  --el-tag-bg-color: var(--primary-light) !important;
+  --el-tag-border-color: rgba(0, 224, 255, 0.2) !important;
+  --el-tag-text-color: var(--primary-color) !important;
+
+  &.el-tag--plain {
+    background: var(--primary-light) !important;
+  }
+}
+
+/* Pagination */
+.el-pagination {
+  --el-pagination-bg-color: transparent !important;
+  --el-pagination-text-color: var(--text-regular) !important;
+  --el-pagination-button-bg-color: rgba(255, 255, 255, 0.05) !important;
+  --el-pagination-button-color: var(--text-regular) !important;
+  --el-pagination-hover-color: var(--primary-color) !important;
+
+  .is-active {
+    background: var(--primary-color) !important;
+    color: #0a0e1a !important;
+  }
+
+  button:disabled {
+    color: var(--text-placeholder) !important;
+    background: transparent !important;
+  }
+}
+
+/* Skeleton */
+.el-skeleton {
+  --el-skeleton-color: rgba(255, 255, 255, 0.06) !important;
+  --el-skeleton-to-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Empty */
+.el-empty__description p {
+  color: var(--text-secondary) !important;
+}
+
+/* Alert */
+.el-alert {
+  --el-alert-bg-color: rgba(255, 51, 102, 0.1) !important;
+  border-color: rgba(255, 51, 102, 0.2) !important;
+}
+
+/* Avatar */
+.el-avatar {
+  --el-avatar-bg-color: var(--primary-light) !important;
+}
+
+/* Form */
+.el-form-item__label {
+  color: var(--text-regular) !important;
+}
+
+/* InputNumber */
+.el-input-number {
+  .el-input__wrapper {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+  }
+}
+
+/* Message */
+.el-message {
+  --el-message-bg-color: var(--bg-secondary) !important;
+  --el-message-border-color: var(--border-color) !important;
+  --el-message-text-color: var(--text-primary) !important;
+}

@@ -33,7 +33,7 @@ services:
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-jobRadar-jwt-refresh-secret-prod}
       JWT_EXPIRES_IN: 15m
       JWT_REFRESH_EXPIRES_IN: 7d
-      OPENAI_API_KEY: sk-8ce08477ac2a4c578ed114670d565905
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
       OPENAI_BASE_URL: https://api.deepseek.com/v1
       OPENAI_MODEL: deepseek-chat
       SERVER_PORT: 3001

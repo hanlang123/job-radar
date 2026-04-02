@@ -1,5 +1,7 @@
 # JobRadar — 职位情报分析平台
 
+> **GitHub 仓库：** [https://github.com/hanlang123/job-radar](https://github.com/hanlang123/job-radar)
+
 基于真实爬取数据的职位市场情报分析平台，集成 AI 智能分析、技能图谱可视化和岗位搜索筛选等功能。
 
 ## 技术栈

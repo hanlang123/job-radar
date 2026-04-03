@@ -107,6 +107,69 @@ docker compose up -d
 # 后端 API: http://localhost:3001/api
 ```
 
+### GitHub Actions 自动部署
+
+项目已配置 CI/CD 工作流，推送到 `main` 分支后自动构建镜像并部署到远程服务器。
+
+#### 工作流说明
+
+| 工作流 | 触发条件 | 说明 |
+|--------|----------|------|
+| **CI** (`ci.yml`) | PR / push to main | 构建检查（pnpm build + Docker build） |
+| **Deploy** (`deploy.yml`) | push to main / 手动触发 | 构建镜像 → 推送 GHCR → SSH 部署到服务器 |
+
+#### 配置步骤
+
+1. **创建 GitHub Environment**
+
+   在仓库 Settings → Environments 中创建名为 `production` 的环境（可选启用审批保护）。
+
+2. **配置 GitHub Secrets**
+
+   在仓库 Settings → Secrets and variables → Actions 中添加以下 Secrets：
+
+   | Secret 名称 | 说明 |
+   |-------------|------|
+   | `DEPLOY_SERVER` | 部署目标服务器 IP 或域名 |
+   | `DEPLOY_USER` | SSH 登录用户名 |
+   | `DEPLOY_SSH_KEY` | SSH 私钥（推荐 Ed25519） |
+   | `DEPLOY_PASSWORD` | SSH 密码（与 SSH Key 二选一） |
+   | `OPENAI_API_KEY` | OpenAI 兼容 API Key |
+   | `JWT_SECRET` | JWT 访问令牌密钥 |
+   | `JWT_REFRESH_SECRET` | JWT 刷新令牌密钥 |
+   | `GHCR_PAT` | GitHub PAT（需 `read:packages` 权限，供服务器拉取镜像） |
+
+3. **服务器准备**
+
+   ```bash
+   # 确保服务器已安装 Docker 和 Docker Compose
+   docker --version
+   docker compose version
+
+   # 创建部署目录
+   sudo mkdir -p /opt/jobRadar
+   sudo chown $USER:$USER /opt/jobRadar
+   ```
+
+4. **触发部署**
+
+   - **自动触发**：将代码合并到 `main` 分支
+   - **手动触发**：在 GitHub Actions 页面选择 Deploy 工作流 → Run workflow
+
+#### 部署架构
+
+```
+GitHub Actions (CI/CD)
+  ↓ Build & Push
+GHCR (ghcr.io/hanlang123/job-radar/server:latest)
+GHCR (ghcr.io/hanlang123/job-radar/web:latest)
+  ↓ SSH Deploy
+Remote Server (/opt/jobRadar)
+  ├── Nginx (:80) → 反向代理
+  ├── Web   (:3000, internal)
+  └── Server (:3001, internal)
+```
+
 ## 环境变量
 
 | 变量 | 说明 | 默认值 |

@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import type { ChatScene } from '@job-radar/shared'
+
 useHead({ title: 'AI 助手 - JobRadar' })
 definePageMeta({ middleware: 'auth' })
 
 const route = useRoute()
-const scene = (route.query.scene as string) || undefined
+const scene = (route.query.scene as ChatScene) || undefined
 const jobId = (route.query.jobId as string) || undefined
 </script>
 

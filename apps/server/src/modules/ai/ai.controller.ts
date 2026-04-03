@@ -8,6 +8,9 @@ import {
   Get,
   Param,
   Query,
+  Delete,
+  Patch,
+  NotFoundException,
 } from '@nestjs/common'
 import { Response } from 'express'
 import { AiService } from './ai.service'
@@ -17,6 +20,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { ChatSessionEntity } from './entities/chat-session.entity'
+import { UpdateSessionDto } from './dto/update-session.dto'
 
 @Controller('chat')
 export class AiController {
@@ -92,9 +96,22 @@ export class AiController {
     return this.sessionRepo.find({
       where,
       order: { updatedAt: 'DESC' },
-      select: ['id', 'scene', 'jobId', 'createdAt', 'updatedAt'],
-      take: 20,
+      select: ['id', 'title', 'scene', 'jobId', 'createdAt', 'updatedAt'],
+      take: 50,
     })
+  }
+
+  /**
+   * 查找用户会话，不存在时抛出 404
+   */
+  private async findSessionOrFail(id: string, userId: string): Promise<ChatSessionEntity> {
+    const session = await this.sessionRepo.findOne({
+      where: { id, userId },
+    })
+    if (!session) {
+      throw new NotFoundException('会话不存在')
+    }
+    return session
   }
 
   /**
@@ -107,8 +124,39 @@ export class AiController {
     @Param('id') id: string,
     @CurrentUser() user: { id: string },
   ) {
-    return this.sessionRepo.findOne({
-      where: { id, userId: user.id },
-    })
+    return this.findSessionOrFail(id, user.id)
+  }
+
+  /**
+   * 更新会话标题
+   * PATCH /api/chat/sessions/:id
+   */
+  @Patch('sessions/:id')
+  @UseGuards(JwtAuthGuard)
+  async updateSession(
+    @Param('id') id: string,
+    @Body() dto: UpdateSessionDto,
+    @CurrentUser() user: { id: string },
+  ) {
+    const session = await this.findSessionOrFail(id, user.id)
+    if (dto.title !== undefined) {
+      session.title = dto.title
+    }
+    return this.sessionRepo.save(session)
+  }
+
+  /**
+   * 删除会话
+   * DELETE /api/chat/sessions/:id
+   */
+  @Delete('sessions/:id')
+  @UseGuards(JwtAuthGuard)
+  async deleteSession(
+    @Param('id') id: string,
+    @CurrentUser() user: { id: string },
+  ) {
+    const session = await this.findSessionOrFail(id, user.id)
+    await this.sessionRepo.remove(session)
+    return { success: true }
   }
 }

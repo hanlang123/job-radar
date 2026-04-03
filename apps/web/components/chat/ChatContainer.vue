@@ -4,13 +4,18 @@
  * 管理聊天消息列表、场景切换、SSE 流式通信
  * UI 风格参考 claude.ai：简洁、无气泡、居中布局
  */
-import type { ChatMessage, ChatScene } from '@job-radar/shared'
+import type { ChatMessage, ChatScene, ChatSessionDetail } from '@job-radar/shared'
 
 const props = defineProps<{
   /** 预设场景 */
   scene?: ChatScene
   /** 关联的职位 ID */
   jobId?: string
+}>()
+
+const emit = defineEmits<{
+  /** 会话变更（新建或切换后），通知外部更新 */
+  sessionChange: [sessionId: string | undefined]
 }>()
 
 const config = useRuntimeConfig()
@@ -81,6 +86,7 @@ async function handleSend(text: string) {
       messages.value[aiMessageIndex].content = content.value
       if (conversationId.value) {
         sessionId.value = conversationId.value
+        emit('sessionChange', conversationId.value)
       }
     },
     onError(error) {
@@ -105,7 +111,29 @@ function handleSceneChange(scene: ChatScene) {
   currentScene.value = scene
   messages.value = []
   sessionId.value = undefined
+  emit('sessionChange', undefined)
 }
+
+/** 加载历史会话 */
+function loadSession(detail: ChatSessionDetail) {
+  sessionId.value = detail.id
+  currentScene.value = (detail.scene as ChatScene) || 'general'
+  messages.value = (detail.messages || []).map(msg => ({
+    role: msg.role,
+    content: msg.content,
+    timestamp: msg.timestamp,
+  }))
+  scrollToBottom()
+}
+
+/** 开始新会话（清空当前对话） */
+function newSession() {
+  messages.value = []
+  sessionId.value = undefined
+  emit('sessionChange', undefined)
+}
+
+defineExpose({ loadSession, newSession, sessionId })
 </script>
 
 <template>

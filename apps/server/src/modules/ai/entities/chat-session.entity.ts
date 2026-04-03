@@ -15,6 +15,9 @@ export class ChatSessionEntity {
   @JoinColumn({ name: 'user_id' })
   user!: UserEntity
 
+  @Column({ type: 'varchar', length: 100, nullable: true })
+  title?: string
+
   @Column({ type: 'varchar', length: 50, nullable: true })
   scene?: string
 

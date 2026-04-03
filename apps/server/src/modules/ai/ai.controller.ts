@@ -8,6 +8,9 @@ import {
   Get,
   Param,
   Query,
+  Delete,
+  Patch,
+  NotFoundException,
 } from '@nestjs/common'
 import { Response } from 'express'
 import { AiService } from './ai.service'
@@ -17,6 +20,7 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 import { ChatSessionEntity } from './entities/chat-session.entity'
+import { UpdateSessionDto } from './dto/update-session.dto'
 
 @Controller('chat')
 export class AiController {
@@ -92,8 +96,8 @@ export class AiController {
     return this.sessionRepo.find({
       where,
       order: { updatedAt: 'DESC' },
-      select: ['id', 'scene', 'jobId', 'createdAt', 'updatedAt'],
-      take: 20,
+      select: ['id', 'title', 'scene', 'jobId', 'createdAt', 'updatedAt'],
+      take: 50,
     })
   }
 
@@ -107,8 +111,55 @@ export class AiController {
     @Param('id') id: string,
     @CurrentUser() user: { id: string },
   ) {
-    return this.sessionRepo.findOne({
+    const session = await this.sessionRepo.findOne({
       where: { id, userId: user.id },
     })
+    if (!session) {
+      throw new NotFoundException('会话不存在')
+    }
+    return session
+  }
+
+  /**
+   * 更新会话标题
+   * PATCH /api/chat/sessions/:id
+   */
+  @Patch('sessions/:id')
+  @UseGuards(JwtAuthGuard)
+  async updateSession(
+    @Param('id') id: string,
+    @Body() dto: UpdateSessionDto,
+    @CurrentUser() user: { id: string },
+  ) {
+    const session = await this.sessionRepo.findOne({
+      where: { id, userId: user.id },
+    })
+    if (!session) {
+      throw new NotFoundException('会话不存在')
+    }
+    if (dto.title !== undefined) {
+      session.title = dto.title
+    }
+    return this.sessionRepo.save(session)
+  }
+
+  /**
+   * 删除会话
+   * DELETE /api/chat/sessions/:id
+   */
+  @Delete('sessions/:id')
+  @UseGuards(JwtAuthGuard)
+  async deleteSession(
+    @Param('id') id: string,
+    @CurrentUser() user: { id: string },
+  ) {
+    const session = await this.sessionRepo.findOne({
+      where: { id, userId: user.id },
+    })
+    if (!session) {
+      throw new NotFoundException('会话不存在')
+    }
+    await this.sessionRepo.remove(session)
+    return { success: true }
   }
 }

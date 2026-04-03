@@ -44,3 +44,24 @@ export interface SSEErrorEvent {
 
 /** SSE 数据块（联合类型） */
 export type SSEChunk = SSEMessageEvent | SSEMessageEndEvent | SSEErrorEvent
+
+/** 聊天会话列表项（不含完整消息） */
+export interface ChatSessionListItem {
+  id: string
+  title: string
+  scene: ChatScene
+  jobId?: string
+  createdAt: string
+  updatedAt: string
+}
+
+/** 聊天会话详情（含完整消息） */
+export interface ChatSessionDetail {
+  id: string
+  title: string
+  scene: ChatScene
+  jobId?: string
+  messages: ChatMessage[]
+  createdAt: string
+  updatedAt: string
+}

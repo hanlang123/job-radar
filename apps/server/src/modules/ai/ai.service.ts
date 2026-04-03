@@ -51,7 +51,7 @@ export class AiService {
         userId: user.id,
         scene: dto.scene,
         jobId: dto.jobId,
-        title: dto.message.slice(0, 50) + (dto.message.length > 50 ? '...' : ''),
+        title: Array.from(dto.message).slice(0, 50).join('') + (Array.from(dto.message).length > 50 ? '...' : ''),
         messages: [],
       })
       await this.sessionRepo.save(session)

@@ -27,7 +27,7 @@ export function useChatHistory() {
       token = getToken()
       if (!token) {
         navigateTo('/auth/login')
-        throw new Error('登录已过期，请重新登录')
+        return undefined as unknown as T
       }
       headers.Authorization = `Bearer ${token}`
       res = await fetch(url, { ...options, headers })

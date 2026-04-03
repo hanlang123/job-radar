@@ -39,11 +39,8 @@ function handleNewChat() {
 /** 会话变更后刷新侧边栏列表 */
 function handleSessionChange(newSessionId: string | undefined) {
   activeSessionId.value = newSessionId
-  // 延迟刷新列表，确保后端已保存
   if (newSessionId) {
-    setTimeout(() => {
-      chatHistoryRef.value?.refresh()
-    }, 500)
+    chatHistoryRef.value?.refresh()
   }
 }
 

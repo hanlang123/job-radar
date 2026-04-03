@@ -102,6 +102,19 @@ export class AiController {
   }
 
   /**
+   * 查找用户会话，不存在时抛出 404
+   */
+  private async findSessionOrFail(id: string, userId: string): Promise<ChatSessionEntity> {
+    const session = await this.sessionRepo.findOne({
+      where: { id, userId },
+    })
+    if (!session) {
+      throw new NotFoundException('会话不存在')
+    }
+    return session
+  }
+
+  /**
    * 获取单个会话详情
    * GET /api/chat/sessions/:id
    */
@@ -111,13 +124,7 @@ export class AiController {
     @Param('id') id: string,
     @CurrentUser() user: { id: string },
   ) {
-    const session = await this.sessionRepo.findOne({
-      where: { id, userId: user.id },
-    })
-    if (!session) {
-      throw new NotFoundException('会话不存在')
-    }
-    return session
+    return this.findSessionOrFail(id, user.id)
   }
 
   /**
@@ -131,12 +138,7 @@ export class AiController {
     @Body() dto: UpdateSessionDto,
     @CurrentUser() user: { id: string },
   ) {
-    const session = await this.sessionRepo.findOne({
-      where: { id, userId: user.id },
-    })
-    if (!session) {
-      throw new NotFoundException('会话不存在')
-    }
+    const session = await this.findSessionOrFail(id, user.id)
     if (dto.title !== undefined) {
       session.title = dto.title
     }
@@ -153,12 +155,7 @@ export class AiController {
     @Param('id') id: string,
     @CurrentUser() user: { id: string },
   ) {
-    const session = await this.sessionRepo.findOne({
-      where: { id, userId: user.id },
-    })
-    if (!session) {
-      throw new NotFoundException('会话不存在')
-    }
+    const session = await this.findSessionOrFail(id, user.id)
     await this.sessionRepo.remove(session)
     return { success: true }
   }

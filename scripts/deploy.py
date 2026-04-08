@@ -143,9 +143,9 @@ WEB_PORT=3000
 
     # 构建并启动
     print('[4/5] 构建并启动 Docker 容器（这可能需要几分钟）...')
-    exec_command(ssh, f'cd {REMOTE_DIR}/docker && docker compose -f docker-compose.prod.yml down 2>/dev/null || true')
+    exec_command(ssh, f'cd {REMOTE_DIR}/docker && docker compose --env-file {REMOTE_DIR}/.env -f docker-compose.prod.yml down 2>/dev/null || true')
     print('  正在构建镜像...')
-    out, err, code = exec_command(ssh, f'cd {REMOTE_DIR}/docker && docker compose -f docker-compose.prod.yml up --build -d 2>&1')
+    out, err, code = exec_command(ssh, f'cd {REMOTE_DIR}/docker && docker compose --env-file {REMOTE_DIR}/.env -f docker-compose.prod.yml up --build -d 2>&1')
     if code != 0:
         print(f'\n构建失败！退出码: {code}')
         ssh.close()
@@ -156,7 +156,7 @@ WEB_PORT=3000
 
     # 检查状态
     print('\n[5/5] 检查服务状态...')
-    exec_command(ssh, f'cd {REMOTE_DIR}/docker && docker compose -f docker-compose.prod.yml ps')
+    exec_command(ssh, f'cd {REMOTE_DIR}/docker && docker compose --env-file {REMOTE_DIR}/.env -f docker-compose.prod.yml ps')
     exec_command(ssh, 'docker logs jobRadar-server --tail 10 2>&1')
 
     ssh.close()

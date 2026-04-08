@@ -2,9 +2,18 @@
 /**
  * 聊天容器组件
  * 管理聊天消息列表、场景切换、SSE 流式通信
- * UI 风格参考 claude.ai：简洁、无气泡、居中布局
+ * 支持中断与恢复、Agent 状态可视化
  */
-import type { ChatMessage, ChatScene, ChatSessionDetail } from '@job-radar/shared'
+import type { ChatMessage, ChatScene, ChatSessionDetail, AgentStatus, AgentStatusStep } from '@job-radar/shared'
+
+/** 扩展消息类型，追踪流式和状态信息 */
+interface ChatMessageExt extends ChatMessage {
+  isStreaming?: boolean
+  agentStatus?: AgentStatus
+  statusSteps?: AgentStatusStep[]
+  /** 中断时对应的用户消息文本（恢复用） */
+  _userMessage?: string
+}
 
 const props = defineProps<{
   /** 预设场景 */
@@ -20,9 +29,9 @@ const emit = defineEmits<{
 
 const config = useRuntimeConfig()
 const { isLoggedIn } = useAuth()
-const { content, isStreaming, conversationId, start, abort } = useSSE()
+const { content, isStreaming, conversationId, agentStatus, statusSteps, isInterrupted, start, abort } = useSSE()
 
-const messages = ref<(ChatMessage & { isStreaming?: boolean })[]>([])
+const messages = ref<ChatMessageExt[]>([])
 const currentScene = ref<ChatScene>(props.scene || 'general')
 const sessionId = ref<string>()
 const messagesContainer = ref<HTMLElement>()
@@ -66,6 +75,9 @@ async function handleSend(text: string) {
     content: '',
     timestamp: new Date().toISOString(),
     isStreaming: true,
+    agentStatus: 'thinking',
+    statusSteps: [],
+    _userMessage: text,
   })
 
   // 开始 SSE 流式请求
@@ -81,9 +93,15 @@ async function handleSend(text: string) {
       messages.value[aiMessageIndex].content = content.value
       scrollToBottom()
     },
+    onStatusChange(status: AgentStatus) {
+      messages.value[aiMessageIndex].agentStatus = status
+      messages.value[aiMessageIndex].statusSteps = [...statusSteps.value]
+    },
     onDone() {
       messages.value[aiMessageIndex].isStreaming = false
       messages.value[aiMessageIndex].content = content.value
+      messages.value[aiMessageIndex].agentStatus = 'completed'
+      messages.value[aiMessageIndex].statusSteps = [...statusSteps.value]
       if (conversationId.value) {
         sessionId.value = conversationId.value
         emit('sessionChange', conversationId.value)
@@ -92,17 +110,87 @@ async function handleSend(text: string) {
     onError(error) {
       messages.value[aiMessageIndex].isStreaming = false
       messages.value[aiMessageIndex].content = `请求失败: ${error.message}`
+      messages.value[aiMessageIndex].agentStatus = 'failed'
+      messages.value[aiMessageIndex].statusSteps = [...statusSteps.value]
       ElMessage.error(`AI 请求失败: ${error.message}`)
     },
   })
+
+  // 如果是用户主动中断（AbortError 被 useSSE 捕获后 isInterrupted 为 true）
+  if (isInterrupted.value) {
+    messages.value[aiMessageIndex].isStreaming = false
+    messages.value[aiMessageIndex].agentStatus = 'interrupted'
+    messages.value[aiMessageIndex].statusSteps = [...statusSteps.value]
+    messages.value[aiMessageIndex].content = content.value
+    if (conversationId.value) {
+      sessionId.value = conversationId.value
+      emit('sessionChange', conversationId.value)
+    }
+  }
 }
 
 /** 取消流式输出 */
 function handleAbort() {
   abort()
-  const lastMsg = messages.value[messages.value.length - 1]
-  if (lastMsg?.role === 'assistant') {
-    lastMsg.isStreaming = false
+  // 状态更新由 handleSend 中的 isInterrupted 检查完成
+}
+
+/** 恢复中断的消息 */
+async function handleResume(msgIndex: number) {
+  const interruptedMsg = messages.value[msgIndex]
+  if (!interruptedMsg || interruptedMsg.role !== 'assistant' || interruptedMsg.agentStatus !== 'interrupted') return
+
+  const partialContent = interruptedMsg.content
+  const userMessage = interruptedMsg._userMessage || ''
+
+  // 标记为流式状态
+  interruptedMsg.isStreaming = true
+  interruptedMsg.agentStatus = 'thinking'
+
+  // 发起恢复请求
+  await start({
+    url: `${config.public.apiBase}/chat/stream`,
+    body: {
+      message: userMessage,
+      scene: currentScene.value,
+      sessionId: sessionId.value,
+      jobId: props.jobId,
+      resume: true,
+      partialContent,
+    },
+    resumePrefix: partialContent,
+    onMessage() {
+      interruptedMsg.content = content.value
+      scrollToBottom()
+    },
+    onStatusChange(status: AgentStatus) {
+      interruptedMsg.agentStatus = status
+      interruptedMsg.statusSteps = [...statusSteps.value]
+    },
+    onDone() {
+      interruptedMsg.isStreaming = false
+      interruptedMsg.content = content.value
+      interruptedMsg.agentStatus = 'completed'
+      interruptedMsg.statusSteps = [...statusSteps.value]
+      if (conversationId.value) {
+        sessionId.value = conversationId.value
+        emit('sessionChange', conversationId.value)
+      }
+    },
+    onError(error) {
+      interruptedMsg.isStreaming = false
+      interruptedMsg.agentStatus = 'failed'
+      interruptedMsg.statusSteps = [...statusSteps.value]
+      ElMessage.error(`恢复失败: ${error.message}`)
+    },
+  })
+
+  // 再次中断的处理
+  if (isInterrupted.value) {
+    interruptedMsg.isStreaming = false
+    interruptedMsg.agentStatus = 'interrupted'
+    interruptedMsg.statusSteps = [...statusSteps.value]
+    interruptedMsg.content = content.value
   }
 }
 
@@ -191,6 +279,9 @@ defineExpose({ loadSession, newSession, sessionId })
             :key="idx"
             :message="msg"
             :is-streaming="msg.isStreaming"
+            :agent-status="msg.agentStatus"
+            :status-steps="msg.statusSteps"
+            @resume="handleResume(idx)"
           />
         </div>
       </div>

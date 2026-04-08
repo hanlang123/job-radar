@@ -33,7 +33,7 @@ export class AiController {
   ) {}
 
   /**
-   * SSE 流式聊天端点（Dify 简化版格式）
+   * SSE 流式聊天端点（支持中断与恢复）
    * POST /api/chat/stream
    */
   @Post('stream')
@@ -50,11 +50,46 @@ export class AiController {
     res.setHeader('X-Accel-Buffering', 'no')
     res.flushHeaders()
 
+    // 跟踪客户端是否断开
+    let clientDisconnected = false
+    res.on('close', () => { clientDisconnected = true })
+
     try {
       const { sessionId, stream } = await this.aiService.createChatStream(dto, user)
       const createdAt = Math.floor(Date.now() / 1000)
 
+      // 发送 thinking 状态
+      res.write(`data: ${JSON.stringify({
+        event: 'agent_status',
+        status: 'thinking',
+        conversation_id: sessionId,
+        created_at: createdAt,
+      })}\n\n`)
+
+      let firstChunk = true
+      let fullContent = dto.resume && dto.partialContent ? dto.partialContent : ''
+
       for await (const chunk of stream) {
+        if (clientDisconnected) {
+          // 客户端已断开，保存部分内容到会话
+          await this.aiService.savePartialContent(sessionId, user.id, fullContent, dto.message, dto.resume)
+          this.logger.warn(`客户端断开连接，已保存部分内容到会话 ${sessionId}`)
+          return
+        }
+
+        fullContent += chunk
+
+        // 第一个 chunk 时发送 streaming 状态
+        if (firstChunk) {
+          firstChunk = false
+          res.write(`data: ${JSON.stringify({
+            event: 'agent_status',
+            status: 'streaming',
+            conversation_id: sessionId,
+            created_at: createdAt,
+          })}\n\n`)
+        }
+
         res.write(`data: ${JSON.stringify({
           event: 'message',
           answer: chunk,
@@ -70,14 +105,26 @@ export class AiController {
     } catch (error) {
       this.logger.error('SSE 流式传输出错:', error)
       const message = error instanceof Error ? error.message : '服务器内部错误'
-      res.write(`data: ${JSON.stringify({
-        event: 'error',
-        code: 'internal_error',
-        message,
-        status: 500,
-      })}\n\n`)
+
+      if (!clientDisconnected) {
+        // 发送 failed 状态
+        res.write(`data: ${JSON.stringify({
+          event: 'agent_status',
+          status: 'failed',
+          conversation_id: '',
+          created_at: Math.floor(Date.now() / 1000),
+        })}\n\n`)
+        res.write(`data: ${JSON.stringify({
+          event: 'error',
+          code: 'internal_error',
+          message,
+          status: 500,
+        })}\n\n`)
+      }
     } finally {
-      res.end()
+      if (!clientDisconnected) {
+        res.end()
+      }
     }
   }
 

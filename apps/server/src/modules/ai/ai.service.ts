@@ -33,6 +33,7 @@ export class AiService {
 
   /**
    * 创建流式聊天，返回 sessionId 和 AsyncGenerator
+   * 支持恢复中断的会话：resume=true 时从 partialContent 继续
    */
   async createChatStream(
     dto: ChatDto,
@@ -75,13 +76,26 @@ export class AiService {
       })
     }
 
-    messages.push({ role: 'user', content: dto.message })
+    // 恢复模式：将用户消息和已有部分回复加入上下文，要求 AI 继续
+    if (dto.resume && dto.partialContent) {
+      messages.push({ role: 'user', content: dto.message })
+      messages.push({ role: 'assistant', content: dto.partialContent })
+      messages.push({
+        role: 'user',
+        content: '请从上次中断的位置继续输出，不要重复已有内容，直接无缝衔接。',
+      })
+    } else {
+      messages.push({ role: 'user', content: dto.message })
+    }
 
     const sessionRef = session
     const sessionRepo = this.sessionRepo
     const configService = this.configService
     const openai = this.openai
     const logger = this.logger
+    const isResume = dto.resume
+    const partialContent = dto.partialContent || ''
+    const userMessage = dto.message
 
     async function* generateStream(): AsyncGenerator<string> {
       try {
@@ -105,11 +119,35 @@ export class AiService {
         }
 
         // 更新会话消息历史
-        const updatedMessages = [
-          ...history,
-          { role: 'user' as const, content: dto.message, timestamp: new Date().toISOString() },
-          { role: 'assistant' as const, content: fullContent, timestamp: new Date().toISOString() },
-        ]
+        // 恢复模式下拼接完整内容，非恢复模式直接用
+        const completeContent = isResume ? partialContent + fullContent : fullContent
+        let updatedMessages: ChatMessage[]
+
+        if (isResume) {
+          // 恢复模式：替换最后一条 interrupted 的 assistant 消息
+          const existingMessages = [...history]
+          const lastMsg = existingMessages[existingMessages.length - 1]
+          if (lastMsg?.role === 'assistant') {
+            existingMessages[existingMessages.length - 1] = {
+              ...lastMsg,
+              content: completeContent,
+              timestamp: new Date().toISOString(),
+            }
+            updatedMessages = existingMessages
+          } else {
+            updatedMessages = [
+              ...history,
+              { role: 'assistant' as const, content: completeContent, timestamp: new Date().toISOString() },
+            ]
+          }
+        } else {
+          updatedMessages = [
+            ...history,
+            { role: 'user' as const, content: userMessage, timestamp: new Date().toISOString() },
+            { role: 'assistant' as const, content: completeContent, timestamp: new Date().toISOString() },
+          ]
+        }
+
         sessionRef.messages = updatedMessages as unknown as Record<string, unknown>[]
         await sessionRepo.save(sessionRef)
       } catch (error) {
@@ -119,6 +157,42 @@ export class AiService {
     }
 
     return { sessionId: session.id, stream: generateStream() }
+  }
+
+  /**
+   * 保存中断时的部分内容到会话（客户端断开时调用）
+   */
+  async savePartialContent(
+    sessionId: string,
+    userId: string,
+    partialContent: string,
+    userMessage: string,
+    isResume?: boolean,
+  ) {
+    const session = await this.sessionRepo.findOne({
+      where: { id: sessionId, userId },
+    })
+    if (!session) return
+
+    const history = (session.messages as unknown as ChatMessage[]) || []
+
+    if (isResume) {
+      // 恢复模式：更新最后的 assistant 消息
+      const lastMsg = history[history.length - 1]
+      if (lastMsg?.role === 'assistant') {
+        lastMsg.content = partialContent
+        lastMsg.timestamp = new Date().toISOString()
+      }
+    } else {
+      // 新消息模式：追加 user + partial assistant
+      history.push(
+        { role: 'user', content: userMessage, timestamp: new Date().toISOString() },
+        { role: 'assistant', content: partialContent, timestamp: new Date().toISOString() },
+      )
+    }
+
+    session.messages = history as unknown as Record<string, unknown>[]
+    await this.sessionRepo.save(session)
   }
 
   /**

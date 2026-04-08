@@ -128,7 +128,7 @@ JWT_EXPIRES_IN=15m
 JWT_REFRESH_EXPIRES_IN=7d
 
 # OpenAI 兼容 API
-OPENAI_API_KEY=${OPENAI_API_KEY}
+OPENAI_API_KEY={os.environ.get('OPENAI_API_KEY', '')}
 OPENAI_BASE_URL=https://api.deepseek.com/v1
 OPENAI_MODEL=deepseek-chat
 

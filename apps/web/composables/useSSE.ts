@@ -36,8 +36,10 @@ export function useSSE() {
   let streamStartTime = 0
   let abortController: AbortController | null = null
 
-  /** 记录一个状态步骤 */
+  /** 记录一个状态步骤（自动去重连续相同状态） */
   function pushStatus(status: AgentStatus, label: string) {
+    const last = statusSteps.value[statusSteps.value.length - 1]
+    if (last?.status === status) return
     agentStatus.value = status
     statusSteps.value.push({
       status,

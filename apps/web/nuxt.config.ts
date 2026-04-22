@@ -1,11 +1,4 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
-import { createRequire } from 'node:module'
-import { dirname, join } from 'node:path'
-
-const require = createRequire(import.meta.url)
-const vmsDir = dirname(require.resolve('@krishanjinbo/vue-markdown-stream'))
-const vmsCss = join(vmsDir, 'vue-markdown-stream.css')
-
 export default defineNuxtConfig({
   devtools: { enabled: true },
 
@@ -16,7 +9,8 @@ export default defineNuxtConfig({
   css: [
     'element-plus/dist/index.css',
     '~/assets/styles/global.scss',
-    vmsCss,
+    // vue-markdown-stream 内置块样式（v2+ 通过 exports 子路径暴露）
+    '@krishanjinbo/vue-markdown-stream/style.css',
   ],
 
   // Element Plus 自动导入
